@@ -9,7 +9,13 @@ from datetime import datetime
 from pathlib import Path
 from flask import Flask, render_template, jsonify, request, redirect, url_for, flash
 import pandas as pd
-from config import config
+# Use Railway config if deploying to Railway, otherwise use regular config
+try:
+    from config_railway import config
+    print("Using Railway configuration")
+except ImportError:
+    from config import config
+    print("Using local configuration")
 from processor import AudioProcessor
 from s3_manager import s3_manager
 from analytics import analytics

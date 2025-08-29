@@ -59,8 +59,9 @@ nul
 debug.html
 test_*.py
 
-# CSV data files (will use S3 or sample data in production)
+# CSV data files (except the main data file needed for Railway)
 *.csv
+!call_transcriptions.csv
 
 # Audio files
 *.mp3
