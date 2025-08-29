@@ -6,29 +6,34 @@ No processing - just displays your pre-processed data.
 
 import os
 import json
+import csv
 from datetime import datetime
 from pathlib import Path
 from flask import Flask, render_template, jsonify, request
-import pandas as pd
+from collections import defaultdict, Counter
 
 # Flask app for Vercel
 app = Flask(__name__)
 
-# Load CSV data
+# Load CSV data without pandas
 def load_data():
-    """Load your processed CSV data."""
+    """Load your processed CSV data without pandas."""
     try:
         csv_path = Path('call_transcriptions.csv')
         if csv_path.exists():
-            df = pd.read_csv(csv_path)
-            return df
+            data = []
+            with open(csv_path, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    data.append(row)
+            return data
         else:
-            return pd.DataFrame()
+            return []
     except Exception as e:
-        return pd.DataFrame()
+        return []
 
 # Load data once
-df = load_data()
+data = load_data()
 
 @app.route('/')
 def dashboard():
@@ -36,18 +41,23 @@ def dashboard():
     try:
         # Calculate stats from your processed data
         total_duration = 0
-        if 'duration_seconds' in df.columns:
-            total_duration = df['duration_seconds'].fillna(0).sum()
+        for row in data:
+            duration = row.get('duration_seconds', '0')
+            if duration and duration != '':
+                try:
+                    total_duration += float(duration)
+                except:
+                    pass
         
         # Get latest processing timestamp
         latest_timestamp = ""
-        if len(df) > 0 and 'timestamp' in df.columns:
-            latest_timestamp = df['timestamp'].fillna('').iloc[-1]
+        if len(data) > 0:
+            latest_timestamp = data[-1].get('timestamp', '')
         
         stats = {
-            'total_files': len(df),
-            'processed_files': len(df),
-            'success_rate': 100.0 if len(df) > 0 else 0,
+            'total_files': len(data),
+            'processed_files': len(data),
+            'success_rate': 100.0 if len(data) > 0 else 0,
             'avg_processing_time': 2.5,
             'total_duration': int(total_duration),
             'last_processed': latest_timestamp or '2025-08-28 15:30:00'
@@ -66,7 +76,19 @@ def api_data():
     try:
         records = []
         
-        for _, row in df.iterrows():
+        for row in data:
+            def safe_int(val, default=0):
+                try:
+                    return int(val) if val and val != '' else default
+                except:
+                    return default
+                    
+            def safe_float(val, default=0.0):
+                try:
+                    return float(val) if val and val != '' else default
+                except:
+                    return default
+            
             record = {
                 'timestamp': str(row.get('timestamp', '')),
                 'filename': str(row.get('filename', '')),
@@ -77,9 +99,9 @@ def api_data():
                 'call_status': str(row.get('call_status', '')),
                 'agent_name': str(row.get('agent_name', '')),
                 'file_size': str(row.get('file_size', '')),
-                'file_size_bytes': int(row.get('file_size_bytes', 0)) if pd.notna(row.get('file_size_bytes')) else 0,
+                'file_size_bytes': safe_int(row.get('file_size_bytes')),
                 'duration': str(row.get('duration', '')),
-                'duration_seconds': float(row.get('duration_seconds', 0)) if pd.notna(row.get('duration_seconds')) else 0,
+                'duration_seconds': safe_float(row.get('duration_seconds')),
                 'summary': str(row.get('summary', '')),
                 'intent': str(row.get('intent', '')),
                 'sub_intent': str(row.get('sub_intent', '')),
@@ -87,11 +109,11 @@ def api_data():
                 'secondary_disposition': str(row.get('secondary_disposition', '')),
                 'status': str(row.get('status', 'completed')),
                 'processing_time': str(row.get('processing_time', '')),
-                'processing_time_seconds': float(row.get('processing_time_seconds', 0)) if pd.notna(row.get('processing_time_seconds')) else 0,
+                'processing_time_seconds': safe_float(row.get('processing_time_seconds')),
                 'error_message': str(row.get('error_message', '')),
                 'transcription': str(row.get('transcription', '')),
                 'diarized_transcription': str(row.get('diarized_transcription', '')),
-                'speaker_count': int(row.get('speaker_count', 1)) if pd.notna(row.get('speaker_count')) else 1
+                'speaker_count': safe_int(row.get('speaker_count'), 1)
             }
             records.append(record)
         
@@ -109,17 +131,22 @@ def api_stats():
     """Dashboard statistics from your processed data."""
     try:
         total_duration = 0
-        if 'duration_seconds' in df.columns:
-            total_duration = df['duration_seconds'].fillna(0).sum()
+        for row in data:
+            duration = row.get('duration_seconds', '0')
+            if duration and duration != '':
+                try:
+                    total_duration += float(duration)
+                except:
+                    pass
             
         latest_timestamp = ""
-        if len(df) > 0 and 'timestamp' in df.columns:
-            latest_timestamp = df['timestamp'].fillna('').iloc[-1]
+        if len(data) > 0:
+            latest_timestamp = data[-1].get('timestamp', '')
         
         return jsonify({
-            'total_files': len(df),
-            'processed_files': len(df),
-            'success_rate': 100.0 if len(df) > 0 else 0,
+            'total_files': len(data),
+            'processed_files': len(data),
+            'success_rate': 100.0 if len(data) > 0 else 0,
             'avg_processing_time': 2.5,
             'total_duration': int(total_duration),
             'last_processed': latest_timestamp or datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -131,16 +158,21 @@ def api_stats():
 def api_intent_distribution():
     """Intent distribution from your processed data."""
     try:
-        if 'intent' not in df.columns or len(df) == 0:
+        if len(data) == 0:
             return jsonify({'intents': [], 'total': 0})
         
-        valid_intents = df['intent'].dropna()
-        valid_intents = valid_intents[valid_intents != '']
+        # Get valid intents
+        valid_intents = []
+        for row in data:
+            intent = row.get('intent', '')
+            if intent and intent.strip() != '':
+                valid_intents.append(intent)
         
         if len(valid_intents) == 0:
             return jsonify({'intents': [], 'total': 0})
         
-        intent_counts = valid_intents.value_counts()
+        # Count intents
+        intent_counts = Counter(valid_intents)
         intents = []
         total = len(valid_intents)
         
@@ -164,40 +196,40 @@ def api_disposition_distribution():
     try:
         primary_disp = []
         secondary_disp = []
-        total = len(df)
+        total = len(data)
         
         # Primary dispositions
-        if 'primary_disposition' in df.columns and total > 0:
-            primary_valid = df['primary_disposition'].dropna()
-            primary_valid = primary_valid[primary_valid != '']
-            primary_counts = primary_valid.value_counts()
-            
-            for disp, count in primary_counts.items():
-                primary_disp.append({
-                    'label': str(disp),
-                    'count': int(count),
-                    'percentage': round((count / len(primary_valid)) * 100, 1) if len(primary_valid) > 0 else 0
-                })
+        primary_valid = []
+        for row in data:
+            disp = row.get('primary_disposition', '')
+            if disp and disp.strip() != '':
+                primary_valid.append(disp)
+        
+        primary_counts = Counter(primary_valid)
+        for disp, count in primary_counts.items():
+            primary_disp.append({
+                'label': str(disp),
+                'count': int(count),
+                'percentage': round((count / len(primary_valid)) * 100, 1) if len(primary_valid) > 0 else 0
+            })
         
         # Secondary dispositions
-        if 'secondary_disposition' in df.columns and total > 0:
-            secondary_valid = df['secondary_disposition'].dropna()
-            secondary_valid = secondary_valid[secondary_valid != '']
-            secondary_counts = secondary_valid.value_counts()
-            
-            for disp, count in secondary_counts.items():
-                secondary_disp.append({
-                    'label': str(disp),
-                    'count': int(count),
-                    'percentage': round((count / len(secondary_valid)) * 100, 1) if len(secondary_valid) > 0 else 0
-                })
+        secondary_valid = []
+        for row in data:
+            disp = row.get('secondary_disposition', '')
+            if disp and disp.strip() != '':
+                secondary_valid.append(disp)
+        
+        secondary_counts = Counter(secondary_valid)
+        for disp, count in secondary_counts.items():
+            secondary_disp.append({
+                'label': str(disp),
+                'count': int(count),
+                'percentage': round((count / len(secondary_valid)) * 100, 1) if len(secondary_valid) > 0 else 0
+            })
         
         # Classification rate
-        classified_count = 0
-        if 'primary_disposition' in df.columns:
-            classified_count = df['primary_disposition'].notna().sum()
-            classified_count -= (df['primary_disposition'] == '').sum()
-        
+        classified_count = len(primary_valid)
         classification_rate = (classified_count / total * 100) if total > 0 else 0
         
         return jsonify({
@@ -214,22 +246,32 @@ def api_disposition_distribution():
 def api_intent_sub_intent_breakdown():
     """Intent sub-intent breakdown from your processed data."""
     try:
-        if 'intent' not in df.columns or 'sub_intent' not in df.columns or len(df) == 0:
+        if len(data) == 0:
             return jsonify({'breakdown': {}, 'total': 0})
         
         breakdown = {}
-        valid_data = df.dropna(subset=['intent', 'sub_intent'])
-        valid_data = valid_data[(valid_data['intent'] != '') & (valid_data['sub_intent'] != '')]
+        valid_data = []
         
-        for intent in valid_data['intent'].unique():
-            intent_data = valid_data[valid_data['intent'] == intent]
-            sub_intent_counts = intent_data['sub_intent'].value_counts()
+        # Get valid intent/sub_intent pairs
+        for row in data:
+            intent = row.get('intent', '')
+            sub_intent = row.get('sub_intent', '')
+            if intent and intent.strip() != '' and sub_intent and sub_intent.strip() != '':
+                valid_data.append({'intent': intent, 'sub_intent': sub_intent})
+        
+        # Group by intent
+        intent_groups = defaultdict(list)
+        for item in valid_data:
+            intent_groups[item['intent']].append(item['sub_intent'])
+        
+        for intent, sub_intents in intent_groups.items():
+            sub_intent_counts = Counter(sub_intents)
             
-            sub_intents = []
-            intent_total = len(intent_data)
+            sub_intent_list = []
+            intent_total = len(sub_intents)
             
             for sub_intent, count in sub_intent_counts.items():
-                sub_intents.append({
+                sub_intent_list.append({
                     'sub_intent': str(sub_intent),
                     'label': str(sub_intent).replace('_', ' ').title(),
                     'count': int(count),
@@ -238,7 +280,7 @@ def api_intent_sub_intent_breakdown():
             
             breakdown[str(intent)] = {
                 'label': str(intent).replace('_', ' ').title(),
-                'sub_intents': sub_intents,
+                'sub_intents': sub_intent_list,
                 'total_count': int(intent_total)
             }
         
@@ -253,23 +295,34 @@ def api_intent_sub_intent_breakdown():
 def api_transcription(filename):
     """Get transcription details for a specific file."""
     try:
-        if len(df) == 0:
+        if len(data) == 0:
             return jsonify({'error': 'No data available'}), 404
             
-        file_data = df[df['filename'] == filename]
-        if file_data.empty:
+        # Find file in data
+        file_row = None
+        for row in data:
+            if row.get('filename', '') == filename:
+                file_row = row
+                break
+        
+        if not file_row:
             return jsonify({'error': f'File {filename} not found'}), 404
         
-        row = file_data.iloc[0]
+        def safe_int(val, default=1):
+            try:
+                return int(val) if val and val != '' else default
+            except:
+                return default
+        
         return jsonify({
-            'transcription': str(row.get('transcription', '')),
-            'diarized_transcription': str(row.get('diarized_transcription', '')),
-            'summary': str(row.get('summary', '')),
-            'intent': str(row.get('intent', '')),
-            'sub_intent': str(row.get('sub_intent', '')),
-            'speaker_count': int(row.get('speaker_count', 1)) if pd.notna(row.get('speaker_count')) else 1,
-            'primary_disposition': str(row.get('primary_disposition', '')),
-            'secondary_disposition': str(row.get('secondary_disposition', ''))
+            'transcription': str(file_row.get('transcription', '')),
+            'diarized_transcription': str(file_row.get('diarized_transcription', '')),
+            'summary': str(file_row.get('summary', '')),
+            'intent': str(file_row.get('intent', '')),
+            'sub_intent': str(file_row.get('sub_intent', '')),
+            'speaker_count': safe_int(file_row.get('speaker_count'), 1),
+            'primary_disposition': str(file_row.get('primary_disposition', '')),
+            'secondary_disposition': str(file_row.get('secondary_disposition', ''))
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
