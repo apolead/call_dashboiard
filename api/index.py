@@ -9,7 +9,7 @@ import json
 import csv
 from datetime import datetime
 from pathlib import Path
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, jsonify, request
 from collections import defaultdict, Counter
 
 # Flask app for Vercel
@@ -37,7 +37,7 @@ data = load_data()
 
 @app.route('/')
 def dashboard():
-    """Main dashboard - shows your processed data beautifully."""
+    """API endpoint - returns dashboard data as JSON."""
     try:
         # Calculate stats from your processed data
         total_duration = 0
@@ -63,12 +63,26 @@ def dashboard():
             'last_processed': latest_timestamp or '2025-08-28 15:30:00'
         }
         
-        return render_template('dashboard.html', stats=stats)
-    except Exception as e:
-        return render_template('dashboard.html', stats={
-            'total_files': 0, 'processed_files': 0, 'success_rate': 0,
-            'avg_processing_time': 0, 'total_duration': 0, 'last_processed': ''
+        return jsonify({
+            'status': 'success',
+            'message': 'Call Dashboard API - Display Only',
+            'stats': stats,
+            'data_loaded': len(data) > 0,
+            'total_records': len(data),
+            'endpoints': {
+                'data': '/api/data',
+                'stats': '/api/stats',
+                'intent_distribution': '/api/analytics/intent-distribution',
+                'disposition_distribution': '/api/analytics/disposition-distribution',
+                'intent_breakdown': '/api/analytics/intent-sub-intent-breakdown'
+            }
         })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e),
+            'total_records': len(data)
+        }), 500
 
 @app.route('/api/data')
 def api_data():
