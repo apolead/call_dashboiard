@@ -9,13 +9,20 @@ from datetime import datetime
 from pathlib import Path
 from flask import Flask, render_template, jsonify, request, redirect, url_for, flash
 import pandas as pd
-# Use Railway config if deploying to Railway, otherwise use regular config
-try:
-    from config_railway import config
-    print("Using Railway configuration")
-except ImportError:
-    from config import config
-    print("Using local configuration")
+# For Railway deployment, use minimal app to avoid build timeouts
+import os
+if os.getenv('RAILWAY_ENVIRONMENT_NAME'):
+    # Running on Railway - use minimal version
+    print("Detected Railway environment - using minimal app")
+    exec(open('app_railway_minimal.py').read())
+else:
+    # Local development - use full config
+    try:
+        from config_railway import config
+        print("Using Railway configuration")
+    except ImportError:
+        from config import config
+        print("Using local configuration")
 from processor import AudioProcessor
 from s3_manager import s3_manager
 from analytics import analytics
