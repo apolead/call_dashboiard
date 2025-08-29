@@ -1,1 +1,1 @@
-web: python app_railway_minimal.py
+web: python app_dashboard_only.py
