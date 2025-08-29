@@ -1,0 +1,11 @@
+audio_files/
+*.wav
+*.mp3
+*.m4a
+__pycache__/
+*.pyc
+.env
+app.py
+app_dashboard_only.py
+railway.json
+Procfile
