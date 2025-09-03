@@ -63,6 +63,7 @@ export default function Dashboard() {
   const [selectedSecondaryDisposition, setSelectedSecondaryDisposition] = useState('all')
   const [selectedAgent, setSelectedAgent] = useState('all')
   const [selectedCallStatus, setSelectedCallStatus] = useState('all')
+  const [selectedDuration, setSelectedDuration] = useState('all')
   const [showTranscriptionModal, setShowTranscriptionModal] = useState(false)
   const [selectedCallForTranscription, setSelectedCallForTranscription] = useState<CallData | null>(null)
 
@@ -217,6 +218,51 @@ export default function Dashboard() {
     }]
   }
 
+  // Duration distribution (under 2 minutes vs over 2 minutes)
+  const durationDistribution = data.reduce((acc, call) => {
+    const duration = parseInt(call.estimated_duration_seconds) || 0
+    if (duration <= 120) { // 2 minutes = 120 seconds
+      acc['Under 2 min'] = (acc['Under 2 min'] || 0) + 1
+    } else {
+      acc['Over 2 min'] = (acc['Over 2 min'] || 0) + 1
+    }
+    return acc
+  }, {} as Record<string, number>)
+
+  const durationData = {
+    labels: Object.keys(durationDistribution),
+    datasets: [{
+      data: Object.values(durationDistribution),
+      backgroundColor: ['#ef4444', '#10b981'], // Red for under 2 min, Green for over 2 min
+      borderWidth: 2,
+      borderColor: '#ffffff'
+    }]
+  }
+
+  // Duration categories for detailed breakdown
+  const durationCategories = data.reduce((acc, call) => {
+    const duration = parseInt(call.estimated_duration_seconds) || 0
+    let category = ''
+    if (duration < 30) category = '0-30 sec'
+    else if (duration < 60) category = '30sec-1min'
+    else if (duration < 120) category = '1-2 min'
+    else if (duration < 300) category = '2-5 min'
+    else if (duration < 600) category = '5-10 min'
+    else category = '10+ min'
+    
+    acc[category] = (acc[category] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+
+  const durationCategoryData = {
+    labels: Object.keys(durationCategories),
+    datasets: [{
+      label: 'Call Count',
+      data: Object.values(durationCategories),
+      backgroundColor: ['#ef4444', '#f97316', '#f59e0b', '#10b981', '#059669', '#047857']
+    }]
+  }
+
   // Filter data
   const filteredData = data.filter(call => {
     const matchesSearch = call.transcription?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -230,8 +276,29 @@ export default function Dashboard() {
     const matchesAgent = selectedAgent === 'all' || call.agent_name === selectedAgent
     const matchesCallStatus = selectedCallStatus === 'all' || call.call_status === selectedCallStatus
     
+    // Duration filter logic
+    const duration = parseInt(call.estimated_duration_seconds) || 0
+    let matchesDuration = true
+    if (selectedDuration === 'under_2min') {
+      matchesDuration = duration <= 120
+    } else if (selectedDuration === 'over_2min') {
+      matchesDuration = duration > 120
+    } else if (selectedDuration === '0-30sec') {
+      matchesDuration = duration < 30
+    } else if (selectedDuration === '30sec-1min') {
+      matchesDuration = duration >= 30 && duration < 60
+    } else if (selectedDuration === '1-2min') {
+      matchesDuration = duration >= 60 && duration <= 120
+    } else if (selectedDuration === '2-5min') {
+      matchesDuration = duration > 120 && duration < 300
+    } else if (selectedDuration === '5-10min') {
+      matchesDuration = duration >= 300 && duration < 600
+    } else if (selectedDuration === '10min+') {
+      matchesDuration = duration >= 600
+    }
+    
     return matchesSearch && matchesIntent && matchesSubIntent && matchesPrimaryDisposition && 
-           matchesSecondaryDisposition && matchesAgent && matchesCallStatus
+           matchesSecondaryDisposition && matchesAgent && matchesCallStatus && matchesDuration
   })
 
   const getIntentBadgeClass = (intent: string) => {
@@ -324,7 +391,7 @@ export default function Dashboard() {
 
       {/* Charts Row 1 */}
       <div className="row mb-4">
-        <div className="col-lg-3 mb-3">
+        <div className="col-lg-2 mb-3">
           <div className="card h-100">
             <div className="card-header">
               <h5 className="card-title mb-0">Intent Distribution</h5>
@@ -337,7 +404,7 @@ export default function Dashboard() {
           </div>
         </div>
         
-        <div className="col-lg-3 mb-3">
+        <div className="col-lg-2 mb-3">
           <div className="card h-100">
             <div className="card-header">
               <h5 className="card-title mb-0">Sub-Intent Distribution</h5>
@@ -350,7 +417,7 @@ export default function Dashboard() {
           </div>
         </div>
         
-        <div className="col-lg-3 mb-3">
+        <div className="col-lg-2 mb-3">
           <div className="card h-100">
             <div className="card-header">
               <h5 className="card-title mb-0">Primary Disposition</h5>
@@ -363,7 +430,7 @@ export default function Dashboard() {
           </div>
         </div>
         
-        <div className="col-lg-3 mb-3">
+        <div className="col-lg-2 mb-3">
           <div className="card h-100">
             <div className="card-header">
               <h5 className="card-title mb-0">Call Status</h5>
@@ -371,6 +438,60 @@ export default function Dashboard() {
             <div className="card-body">
               <div className="chart-container">
                 <Bar data={callStatusData} options={{ responsive: true, maintainAspectRatio: false }} />
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="col-lg-2 mb-3">
+          <div className="card h-100">
+            <div className="card-header">
+              <h5 className="card-title mb-0">Duration: Under vs Over 2min</h5>
+            </div>
+            <div className="card-body">
+              <div className="chart-container">
+                <Pie data={durationData} options={{ 
+                  responsive: true, 
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: 'bottom',
+                      labels: {
+                        boxWidth: 12,
+                        fontSize: 10
+                      }
+                    }
+                  }
+                }} />
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="col-lg-2 mb-3">
+          <div className="card h-100">
+            <div className="card-header">
+              <h5 className="card-title mb-0">Duration Categories</h5>
+            </div>
+            <div className="card-body">
+              <div className="chart-container">
+                <Bar data={durationCategoryData} options={{ 
+                  responsive: true, 
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: false
+                    }
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      ticks: {
+                        stepSize: 1
+                      }
+                    }
+                  }
+                }} />
               </div>
             </div>
           </div>
@@ -479,7 +600,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="row g-3 mt-2">
-                <div className="col-lg-3">
+                <div className="col-lg-2">
                   <label className="form-label">Secondary Disposition</label>
                   <select
                     className="form-select"
@@ -506,6 +627,24 @@ export default function Dashboard() {
                   </select>
                 </div>
                 <div className="col-lg-2">
+                  <label className="form-label">Call Duration</label>
+                  <select
+                    className="form-select"
+                    value={selectedDuration}
+                    onChange={(e) => setSelectedDuration(e.target.value)}
+                  >
+                    <option value="all">All Durations</option>
+                    <option value="under_2min">Under 2 minutes</option>
+                    <option value="over_2min">Over 2 minutes</option>
+                    <option value="0-30sec">0-30 seconds</option>
+                    <option value="30sec-1min">30 sec - 1 min</option>
+                    <option value="1-2min">1-2 minutes</option>
+                    <option value="2-5min">2-5 minutes</option>
+                    <option value="5-10min">5-10 minutes</option>
+                    <option value="10min+">10+ minutes</option>
+                  </select>
+                </div>
+                <div className="col-lg-6">
                   <label className="form-label">Actions</label>
                   <div>
                     <button 
@@ -518,10 +657,14 @@ export default function Dashboard() {
                         setSelectedSecondaryDisposition('all')
                         setSelectedAgent('all')
                         setSelectedCallStatus('all')
+                        setSelectedDuration('all')
                       }}
                     >
-                      Clear All
+                      Clear All Filters
                     </button>
+                    <span className="text-muted ms-3">
+                      Duration Stats: {durationDistribution['Under 2 min'] || 0} calls under 2min, {durationDistribution['Over 2 min'] || 0} calls over 2min
+                    </span>
                   </div>
                 </div>
               </div>
