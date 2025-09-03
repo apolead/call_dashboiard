@@ -68,7 +68,7 @@ export default function Dashboard() {
             setData(results.data as CallData[])
             setLoading(false)
           },
-          error: (error) => {
+          error: (error: any) => {
             console.error('Error parsing CSV:', error)
             setLoading(false)
           }
