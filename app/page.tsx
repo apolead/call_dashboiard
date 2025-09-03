@@ -391,59 +391,118 @@ export default function Dashboard() {
 
       {/* Charts Row 1 */}
       <div className="row mb-4">
-        <div className="col-lg-2 mb-3">
+        <div className="col-lg-4 mb-3">
           <div className="card h-100">
             <div className="card-header">
               <h5 className="card-title mb-0">Intent Distribution</h5>
             </div>
             <div className="card-body">
               <div className="chart-container">
-                <Pie data={pieData} options={{ responsive: true, maintainAspectRatio: false }} />
+                <Pie data={pieData} options={{ 
+                  responsive: true, 
+                  maintainAspectRatio: false,
+                  plugins: {
+                    tooltip: {
+                      callbacks: {
+                        label: function(context) {
+                          const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                          const percentage = ((context.raw / total) * 100).toFixed(1);
+                          return `${context.label}: ${context.raw} calls (${percentage}%)`;
+                        }
+                      }
+                    }
+                  }
+                }} />
               </div>
             </div>
           </div>
         </div>
         
-        <div className="col-lg-2 mb-3">
+        <div className="col-lg-4 mb-3">
           <div className="card h-100">
             <div className="card-header">
               <h5 className="card-title mb-0">Sub-Intent Distribution</h5>
             </div>
             <div className="card-body">
               <div className="chart-container">
-                <Pie data={subIntentData} options={{ responsive: true, maintainAspectRatio: false }} />
+                <Pie data={subIntentData} options={{ 
+                  responsive: true, 
+                  maintainAspectRatio: false,
+                  plugins: {
+                    tooltip: {
+                      callbacks: {
+                        label: function(context) {
+                          const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                          const percentage = ((context.raw / total) * 100).toFixed(1);
+                          return `${context.label}: ${context.raw} calls (${percentage}%)`;
+                        }
+                      }
+                    }
+                  }
+                }} />
               </div>
             </div>
           </div>
         </div>
         
-        <div className="col-lg-2 mb-3">
+        <div className="col-lg-4 mb-3">
           <div className="card h-100">
             <div className="card-header">
               <h5 className="card-title mb-0">Primary Disposition</h5>
             </div>
             <div className="card-body">
               <div className="chart-container">
-                <Pie data={dispositionData} options={{ responsive: true, maintainAspectRatio: false }} />
+                <Pie data={dispositionData} options={{ 
+                  responsive: true, 
+                  maintainAspectRatio: false,
+                  plugins: {
+                    tooltip: {
+                      callbacks: {
+                        label: function(context) {
+                          const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                          const percentage = ((context.raw / total) * 100).toFixed(1);
+                          return `${context.label}: ${context.raw} calls (${percentage}%)`;
+                        }
+                      }
+                    }
+                  }
+                }} />
               </div>
             </div>
           </div>
         </div>
-        
-        <div className="col-lg-2 mb-3">
+      </div>
+
+      {/* Charts Row 2 */}
+      <div className="row mb-4">
+        <div className="col-lg-4 mb-3">
           <div className="card h-100">
             <div className="card-header">
               <h5 className="card-title mb-0">Call Status</h5>
             </div>
             <div className="card-body">
               <div className="chart-container">
-                <Bar data={callStatusData} options={{ responsive: true, maintainAspectRatio: false }} />
+                <Bar data={callStatusData} options={{ 
+                  responsive: true, 
+                  maintainAspectRatio: false,
+                  plugins: {
+                    tooltip: {
+                      callbacks: {
+                        label: function(context) {
+                          const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                          const percentage = ((context.raw / total) * 100).toFixed(1);
+                          return `${context.label}: ${context.raw} calls (${percentage}%)`;
+                        }
+                      }
+                    }
+                  }
+                }} />
               </div>
             </div>
           </div>
         </div>
         
-        <div className="col-lg-2 mb-3">
+        <div className="col-lg-4 mb-3">
           <div className="card h-100">
             <div className="card-header">
               <h5 className="card-title mb-0">Duration: Under vs Over 2min</h5>
@@ -454,11 +513,13 @@ export default function Dashboard() {
                   responsive: true, 
                   maintainAspectRatio: false,
                   plugins: {
-                    legend: {
-                      position: 'bottom',
-                      labels: {
-                        boxWidth: 12,
-                        fontSize: 10
+                    tooltip: {
+                      callbacks: {
+                        label: function(context) {
+                          const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                          const percentage = ((context.raw / total) * 100).toFixed(1);
+                          return `${context.label}: ${context.raw} calls (${percentage}%)`;
+                        }
                       }
                     }
                   }
@@ -468,7 +529,7 @@ export default function Dashboard() {
           </div>
         </div>
         
-        <div className="col-lg-2 mb-3">
+        <div className="col-lg-4 mb-3">
           <div className="card h-100">
             <div className="card-header">
               <h5 className="card-title mb-0">Duration Categories</h5>
@@ -481,6 +542,15 @@ export default function Dashboard() {
                   plugins: {
                     legend: {
                       display: false
+                    },
+                    tooltip: {
+                      callbacks: {
+                        label: function(context) {
+                          const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                          const percentage = ((context.raw / total) * 100).toFixed(1);
+                          return `${context.label}: ${context.raw} calls (${percentage}%)`;
+                        }
+                      }
                     }
                   },
                   scales: {
@@ -498,7 +568,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Charts Row 2 */}
+      {/* Charts Row 3 */}
       <div className="row mb-4">
         <div className="col-lg-6 mb-3">
           <div className="card h-100">
@@ -507,7 +577,19 @@ export default function Dashboard() {
             </div>
             <div className="card-body">
               <div className="chart-container">
-                <Line data={lineData} options={{ responsive: true, maintainAspectRatio: false }} />
+                <Line data={lineData} options={{ 
+                  responsive: true, 
+                  maintainAspectRatio: false,
+                  plugins: {
+                    tooltip: {
+                      callbacks: {
+                        label: function(context) {
+                          return `${context.dataset.label}: ${context.raw} calls`;
+                        }
+                      }
+                    }
+                  }
+                }} />
               </div>
             </div>
           </div>
@@ -520,7 +602,21 @@ export default function Dashboard() {
             </div>
             <div className="card-body">
               <div className="chart-container">
-                <Bar data={barData} options={{ responsive: true, maintainAspectRatio: false }} />
+                <Bar data={barData} options={{ 
+                  responsive: true, 
+                  maintainAspectRatio: false,
+                  plugins: {
+                    tooltip: {
+                      callbacks: {
+                        label: function(context) {
+                          const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                          const percentage = ((context.raw / total) * 100).toFixed(1);
+                          return `${context.label}: ${context.raw} calls (${percentage}%)`;
+                        }
+                      }
+                    }
+                  }
+                }} />
               </div>
             </div>
           </div>
