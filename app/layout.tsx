@@ -3,8 +3,8 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'ApoLead Call Analytics Dashboard',
-  description: 'Real-time call analytics and transcription insights',
+  title: 'ApoLead Call Analytics Dashboard - Complete',
+  description: 'Complete call analytics dashboard with full transcription insights',
 }
 
 export default function RootLayout({
