@@ -542,75 +542,93 @@ export default function Dashboard() {
             </div>
             <div className="card-body p-0">
               <div className="table-responsive">
-                <table className="table table-hover mb-0">
+                <table className="table table-hover table-sm mb-0" style={{ fontSize: '0.85rem' }}>
                   <thead>
-                    <tr>
-                      <th>Date/Time</th>
-                      <th>Agent</th>
-                      <th>Phone</th>
-                      <th>Duration</th>
-                      <th>Call Status</th>
-                      <th>Intent</th>
-                      <th>Sub-Intent</th>
-                      <th>Primary Disp.</th>
-                      <th>Secondary Disp.</th>
-                      <th>Summary</th>
-                      <th>Transcription</th>
+                    <tr style={{ backgroundColor: '#f8f9fa' }}>
+                      <th style={{ width: '120px', padding: '8px' }}>Date/Time</th>
+                      <th style={{ width: '130px', padding: '8px' }}>Agent</th>
+                      <th style={{ width: '100px', padding: '8px' }}>Phone</th>
+                      <th style={{ width: '70px', padding: '8px' }}>Duration</th>
+                      <th style={{ width: '90px', padding: '8px' }}>Status</th>
+                      <th style={{ width: '110px', padding: '8px' }}>Intent</th>
+                      <th style={{ width: '120px', padding: '8px' }}>Sub-Intent</th>
+                      <th style={{ width: '120px', padding: '8px' }}>Primary Disp.</th>
+                      <th style={{ width: '120px', padding: '8px' }}>Secondary Disp.</th>
+                      <th style={{ width: '180px', padding: '8px' }}>Summary</th>
+                      <th style={{ width: '80px', padding: '8px' }}>Transcript</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredData.map((call, index) => (
-                      <tr key={index}>
-                        <td>
-                          <div className="fw-bold">{call.call_date}</div>
-                          <small className="text-muted">{call.call_time}</small>
+                      <tr key={index} style={{ verticalAlign: 'middle' }}>
+                        <td style={{ padding: '6px 8px', lineHeight: '1.2' }}>
+                          <div style={{ fontSize: '0.8rem', fontWeight: '600' }}>{call.call_date}</div>
+                          <div style={{ fontSize: '0.7rem', color: '#666' }}>{call.call_time}</div>
                         </td>
-                        <td>
-                          <div className="fw-bold">{call.agent_name || 'Unknown'}</div>
-                          <small className="text-muted">{call.filename}</small>
+                        <td style={{ padding: '6px 8px', lineHeight: '1.2' }}>
+                          <div style={{ fontSize: '0.8rem', fontWeight: '600' }}>{call.agent_name || 'Unknown'}</div>
+                          <div style={{ fontSize: '0.65rem', color: '#666', wordBreak: 'break-all' }}>
+                            {call.filename.length > 25 ? call.filename.substring(0, 25) + '...' : call.filename}
+                          </div>
                         </td>
-                        <td>{call.phone_number}</td>
-                        <td>{formatDuration(call.estimated_duration_seconds)}</td>
-                        <td>
+                        <td style={{ padding: '6px 8px', fontSize: '0.8rem' }}>{call.phone_number}</td>
+                        <td style={{ padding: '6px 8px', fontSize: '0.8rem', fontWeight: '600' }}>
+                          {formatDuration(call.estimated_duration_seconds)}
+                        </td>
+                        <td style={{ padding: '6px 8px' }}>
                           <span className={`badge ${
                             call.call_status === 'answered' ? 'bg-success' : 
                             call.call_status === 'HangUp' ? 'bg-warning' : 'bg-secondary'
-                          }`}>
-                            {call.call_status}
+                          }`} style={{ fontSize: '0.7rem', padding: '2px 6px' }}>
+                            {call.call_status === 'HangUp' ? 'Hang Up' : call.call_status}
                           </span>
                         </td>
-                        <td>
-                          <span className={`badge ${getIntentBadgeClass(call.intent)}`}>
+                        <td style={{ padding: '6px 8px' }}>
+                          <span className={`badge ${getIntentBadgeClass(call.intent)}`} 
+                                style={{ fontSize: '0.7rem', padding: '2px 6px' }}>
                             {call.intent || 'OTHER'}
                           </span>
                         </td>
-                        <td>
-                          <span className="badge bg-info">
+                        <td style={{ padding: '6px 8px' }}>
+                          <span className="badge bg-info" 
+                                style={{ fontSize: '0.7rem', padding: '2px 6px' }}>
                             {call.sub_intent || 'N/A'}
                           </span>
                         </td>
-                        <td>
-                          <span className="badge bg-success">
+                        <td style={{ padding: '6px 8px' }}>
+                          <span className="badge bg-success" 
+                                style={{ fontSize: '0.7rem', padding: '2px 6px' }}>
                             {call.primary_disposition || 'N/A'}
                           </span>
                         </td>
-                        <td>
-                          <span className="badge bg-warning text-dark">
+                        <td style={{ padding: '6px 8px' }}>
+                          <span className="badge bg-warning text-dark" 
+                                style={{ fontSize: '0.7rem', padding: '2px 6px' }}>
                             {call.secondary_disposition || 'N/A'}
                           </span>
                         </td>
-                        <td>
-                          <div style={{ maxWidth: '200px', fontSize: '0.9rem' }}>
-                            {call.summary || 'No summary available'}
+                        <td style={{ padding: '6px 8px' }}>
+                          <div style={{ 
+                            fontSize: '0.75rem', 
+                            lineHeight: '1.3',
+                            maxHeight: '40px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical'
+                          }}>
+                            {call.summary || 'No summary'}
                           </div>
                         </td>
-                        <td>
+                        <td style={{ padding: '6px 8px' }}>
                           <button
                             className="btn btn-sm btn-outline-primary"
                             onClick={() => openTranscriptionModal(call)}
+                            style={{ fontSize: '0.7rem', padding: '2px 6px' }}
                           >
-                            <i className="bi bi-file-text me-1"></i>
-                            View
+                            <i className="bi bi-file-text"></i>
+                            <span className="d-none d-lg-inline ms-1">View</span>
                           </button>
                         </td>
                       </tr>
