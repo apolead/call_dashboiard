@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Papa from 'papaparse'
+import Papa, { ParseResult, ParseError } from 'papaparse'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -64,11 +64,11 @@ export default function Dashboard() {
         
         Papa.parse(text, {
           header: true,
-          complete: (results) => {
+          complete: (results: Papa.ParseResult<CallData>) => {
             setData(results.data as CallData[])
             setLoading(false)
           },
-          error: (error: any) => {
+          error: (error: Papa.ParseError) => {
             console.error('Error parsing CSV:', error)
             setLoading(false)
           }
